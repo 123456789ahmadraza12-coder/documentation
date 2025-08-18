@@ -53,16 +53,17 @@ Help & version
 
   .. code-block:: bash
 
-    echo "complete -W '`./odoo-bin --help | \
-      sed -e 's/[^a-z_-]\(-\+[a-z0-9_-]\+\)/\n\1\n/' | \
-      grep -- '^-' | sort | uniq | tr '\n' ' '`' odoo-bin" >> ~/.bash_completion
+    COMMANDS=$(odoo-bin --help | sed -e "s/^    \([^ ]\+\).*$/ \1/gp;d" | xargs)
+    echo "complete -W '$COMMANDS' odoo-bin" >> ~/.bash_completion
 
 .. _reference/cmdline/server:
 
-Running the server
-==================
+`server` - Run the Server
+=========================
 
 .. program:: odoo-bin
+
+This command is the default one: you can omit it, and it will be chosen anyway.
 
 .. option:: -d <database>, --database <database>
 
@@ -169,8 +170,8 @@ Running the server
 
 .. _reference/cmdline/testing:
 
-Testing Configuration
-=====================
+Testing
+-------
 
 .. option:: --test-enable
 
@@ -363,38 +364,15 @@ Emails
 Internationalisation
 --------------------
 
-Use these options to translate Odoo to another language. See i18n section of
-the user manual. Option '-d' is mandatory. Option '-l' is mandatory in case
-of importation
-
 .. option:: --load-language <languages>
 
     specifies the languages (separated by commas) for the translations you
     want to be loaded
 
-.. option:: -l, --language <language>
-
-    specify the language of the translation file. Use it with --i18n-export
-    or --i18n-import
-
-.. option:: --i18n-export <filename>
-
-    export all sentences to be translated to a CSV file, a PO file or a TGZ
-    archive and exit.
-
-.. option:: --i18n-import <filename>
-
-    import a CSV or a PO file with translations and exit. The '-l' option is
-    required.
-
 .. option:: --i18n-overwrite
 
     overwrites existing translation terms on updating a module or importing
     a CSV or a PO file.
-
-.. option:: --modules
-
-    specify modules to export. Use in combination with --i18n-export
 
 .. _reference/cmdline/advanced:
 
@@ -661,8 +639,6 @@ Some conversions don't match the pattern:
   ``log_handler``, use that directly in the configuration file
 * :option:`--smtp` is stored as ``smtp_server``
 * :option:`--database` is stored as ``db_name``
-* :option:`--i18n-import` and :option:`--i18n-export` aren't available at all
-  from configuration files
 
 .. _reference/cmdline/config_file:
 
@@ -694,13 +670,15 @@ Here is a sample file:
     https://werkzeug.palletsprojects.com/en/0.16.x/middleware/proxy_fix/#module-werkzeug.middleware.proxy_fix
 .. _pyinotify: https://github.com/seb-m/pyinotify/wiki
 
+
 .. _reference/cmdline/shell:
 
-Shell
-=====
+`shell` - Open a Shell
+======================
 
 The Odoo command line also allows launching Odoo as a Python console environment, enabling direct
-interaction with the :ref:`orm <reference/orm>` and its functionalities.
+interaction with the :ref:`orm <reference/orm>` and its functionalities. Since running a shell
+involves starting the server, the configuration file options do apply.
 
 .. code-block:: console
 
@@ -738,13 +716,210 @@ interaction with the :ref:`orm <reference/orm>` and its functionalities.
    Specify a preferred `REPL` to use in shell mode. This shell is started with the `env` variable
    already initialized to be able to access the `ORM` and other Odoo modules.
 
+
 .. seealso::
    :ref:`reference/orm/environment`
 
-.. _reference/cmdline/scaffold:
 
-Neutralize
-==========
+.. _reference/cmdline/db:
+
+`db` - Database Management
+==========================
+
+.. program:: odoo-bin db
+
+This command lets you manage databases through a command-line interface. The operations are
+specified using subcommands. 
+
+For all subcommands, these options are available:
+
+- :option:`--config <odoo-bin -c>`
+- :option:`--data-dir <odoo-bin -d>`
+- :option:`--addons-path <odoo-bin --addons-path>`
+- :option:`--db_user <odoo-bin --db_user>`
+- :option:`--db_password <odoo-bin --db_password>`
+- :option:`--db_host <odoo-bin --db_host>`
+- :option:`--db_port <odoo-bin --db_port>`
+- :option:`--db_sslmode <odoo-bin --db_sslmode>`
+- :option:`--pg_path <odoo-bin --pg_path>`
+
+
+.. _reference/cmdline/db/init:
+
+`init` - Initialize a Database
+------------------------------
+
+.. program:: odoo-bin db init
+
+This command creates a new database and installs the `base` module. You can specify the
+language and country of the main company.
+
+.. code-block:: console
+
+   $ odoo-bin db init <database>
+
+.. option:: database
+
+   Name of the database to be initialized.
+
+.. option:: --with-demo
+
+   Install demo data in the initialized database.
+
+.. option:: --force
+
+   Delete the database if already exists.
+
+.. option:: --country <country_iso_code>
+
+   Code of the country to be set on the main company
+
+.. option:: --language <language code>
+
+   Default language for the instance, default 'en_US'
+
+.. option:: --username
+
+   Username for the new database, default `admin`
+
+.. option:: --password
+
+   Password for the new database, default `admin`
+
+
+.. _reference/cmdline/db/dump:
+
+`dump` - Save a Database Dump
+-----------------------------
+
+.. program:: odoo-bin db dump
+
+Creates a dump file. The dump is always in zip format (with filestore), to get
+a no-filestore format use `pg_dump` directly.
+
+.. code-block:: console
+
+   $ odoo-bin db dump <database> > <dump_file>
+
+.. option:: database
+
+   Name of the database to dump.
+
+.. option:: dump_path
+
+   (Optional) Database is dumped to specified path. By default it is dumped
+   to `stdout`.
+
+
+.. _reference/cmdline/db/load:
+
+`load` - Load a Database Dump
+-----------------------------
+
+.. program:: odoo-bin db load
+
+Loads a dump file into an Odoo database, the dump file can be a `URL`.
+
+.. code-block:: console
+
+   $ odoo-bin db load <database> <dump_file>
+
+.. option:: -f,--force
+
+   Delete the database before load, if already exists.
+
+.. option:: -n,--neutralize
+
+   Neutralize the database after restore.
+
+.. option:: database
+
+   (Optional) Name of the database to create from the dump.
+   If not provided, the dump filename without extension is used.
+
+.. option:: dump_file
+
+   `.zip` or `pg_dump` file to be loaded.
+
+
+.. _reference/cmdline/db/duplicate:
+
+`duplicate` - Duplicate a Database
+----------------------------------
+
+.. program:: odoo-bin db duplicate
+
+Duplicate a database including filestore.
+
+.. code-block:: console
+
+   $ odoo-bin db duplicate <source> <target>
+
+.. option:: -f,--force
+
+   Delete the database before creation, if a database with the same name already exists.
+
+.. option:: -n,--neutralize
+
+   Neutralize the database after restore.
+
+.. option:: source
+
+   Name of the source database.
+
+.. option:: target
+
+   Name of the target copied database. If the database exists, please use
+   :option:`--force <odoo-bin db duplicate -f,--force>`
+
+
+.. _reference/cmdline/db/rename:
+
+`rename` - Rename a Database
+----------------------------
+
+.. program:: odoo-bin db rename
+
+Renames a database from an old name to a new one.
+
+.. code-block:: console
+
+   $ odoo-bin db rename <source> <target>
+
+.. option:: -f,--force
+
+   Delete the database before creation, if a database with the same name already exists.
+
+.. option:: source
+
+   Name of the source database.
+
+.. option:: target
+
+   Name of the target copied database. If the database exists, please use
+   :option:`--force <odoo-bin db rename -f,--force>`
+
+
+.. _reference/cmdline/db/drop:
+
+`drop` - Delete a Database
+--------------------------
+
+.. code-block:: console
+
+   $ odoo-bin db drop <database>
+
+.. program:: odoo-bin db drop
+
+.. option:: database
+
+   Name of the database to drop.
+
+
+.. _reference/cmdline/neutralize:
+
+`neutralize` - Neutralize a Database
+====================================
 
 .. program:: odoo-bin neutralize
 
@@ -755,7 +930,7 @@ database option.
 
    $ odoo-bin --addons-path <PATH,...>  neutralize -d <database>
 
-.. option:: -d <database, --database <database>
+.. option:: -d <database>, --database <database>
 
    Specify the database name that you would like to neutralize.
 
@@ -767,8 +942,10 @@ database option.
 .. seealso::
    :doc:`../../administration/neutralized_database`
 
-Scaffolding
-===========
+.. _reference/cmdline/scaffold:
+
+`scaffold` - Scaffold a Module
+==============================
 
 .. program:: odoo-bin scaffold
 
@@ -803,8 +980,8 @@ This will create module *my_module* in directory */addons/*.
 
 .. _reference/cmdline/populate:
 
-Database population
-===================
+`populate` - Populate a Database
+================================
 
 .. program:: odoo-bin populate
 
@@ -836,17 +1013,20 @@ It also follows x2Many relationships.
 
 .. _reference/cmdline/cloc:
 
-Cloc
-====
+`cloc` - Count Lines of Code
+============================
 
 .. program:: odoo-bin cloc
 
-Odoo Cloc is a tool to count the number of relevant lines written in
+Odoo Cloc is a tool to count the number of relevant lines of code written in
 Python, Javascript, CSS, SCSS, or XML. This can be used as a rough metric for pricing
 maintenance of extra modules.
 
-Command-line options
---------------------
+.. code-block:: console
+
+    $ odoo-bin cloc -c config.conf -d my_database
+
+
 .. option:: -d <database>, --database <database>
 
 | Process the code of all extra modules installed on the provided database,
@@ -898,10 +1078,6 @@ Multiple paths can be provided by repeating the option.
 .. option:: -c <directories>
 
 Specify a configuration file to use in place of the :option:`--addons-path` option.
-
-.. code-block:: console
-
-    $ odoo-bin cloc -c config.conf -d my_database
 
 
 .. option:: -v, --verbose
@@ -990,21 +1166,3 @@ If an extra module contains such files, they should be fixed to allow the module
 load. If the module works despite the presence of those files, they are probably
 not loaded and should therefore be removed from the module, or at least excluded
 in the manifest via ``cloc_exclude``.
-
-TSConfig Generator
-==================
-
-.. program:: odoo-bin tsconfig
-
-When working on javascript, there are ways to help your editor providing you with
-powerful auto-completion. One of those ways is the use of a tsconfig.json file.
-Originally meant for typescript, editors can use its information with plain javascript also.
-With this config file, you will now have full auto-completion across modules.
-
-The command to generate this files takes as many unnamed arguments as you need. Those are relative paths
-to your addon directories. In the example below, we move up one folder to save the tsconfig file in the folder
-containing community and enterprise.
-
-.. code-block:: console
-
-   $ community/odoo-bin tsconfig --addons-path community/addons,community/odoo/addons,enterprise > tsconfig.json
