@@ -19,12 +19,14 @@ Configuration
 To configure Axivox in Odoo, go to the :menuselection:`Apps` application, and search for `VoIP`.
 Then, install the :guilabel:`VoIP` module.
 
-Next, go to :menuselection:`Settings app --> General Settings --> Integrations section`, and fill
+Next, go to :menuselection:`Settings app --> General Settings --> Integrations section --> VoIP`.
+Click :guilabel:`Manage Providers`, then :guilabel:`New`. Fill in the following information:
 out the :guilabel:`VoIP` field:
 
+- :guilabel:`Name`: type `Axivox`.
+- :guilabel:`WebSocket`: type in `wss://pabx.axivox.com:3443`
 - :guilabel:`OnSIP Domain`: set the domain created by Axivox for the account (e.g.,
   `yourcompany.axivox.com`)
-- :guilabel:`WebSocket`: type in `wss://pabx.axivox.com:3443`
 - :guilabel:`VoIP Environment`: set as :guilabel:`Production`
 
 .. image:: axivox_config/voip-configuration.png
